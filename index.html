@@ -2,84 +2,184 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PvP Casino</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <div class="app">
+        <!-- Верхняя панель -->
         <header class="header">
-            <h1>🎮 PvP Casino</h1>
-            <div class="balance" id="balance">0 TON</div>
+            <div class="user-info">
+                <div class="avatar">👤</div>
+                <div class="username" id="username">Игрок</div>
+            </div>
+            <div class="balance-container">
+                <span class="balance-label">Баланс</span>
+                <span class="balance-value" id="balance">0 TON</span>
+            </div>
         </header>
 
-        <main>
-            <div id="game-menu" class="menu">
-                <button class="btn primary" onclick="createGame()">🎲 Создать игру</button>
-                <button class="btn secondary" onclick="joinGame()">🔍 Найти игру</button>
+        <!-- Горизонтальная навигация (категории) -->
+        <nav class="categories">
+            <button class="category active">LIVE</button>
+            <button class="category">Рув</button>
+            <button class="category">Новое</button>
+            <button class="category">Онлайн</button>
+            <button class="category">Бесплатно</button>
+            <button class="category">2 кейсов</button>
+            <button class="category">Рулетка</button>
+            <button class="category">13 кейсов</button>
+            <button class="category">Краш</button>
+            <button class="category">Онлайн</button>
+            <button class="category">Слоты</button>
+            <button class="category">5 кейсов</button>
+            <button class="category">Яйца</button>
+            <button class="category">6 кейсов</button>
+            <button class="category">Апгрейд</button>
+        </nav>
+
+        <!-- Основной контент -->
+        <main class="content">
+            <!-- Экран главного меню (сетка игр) -->
+            <div id="game-menu" class="game-grid">
+                <div class="game-card" onclick="createGame()">
+                    <div class="card-glow"></div>
+                    <div class="card-icon">🎮</div>
+                    <div class="card-title">PvP Арена</div>
+                    <div class="card-badge">🔥 24 онлайн</div>
+                    <div class="card-stats">Ставка от 0.5 TON</div>
+                    <button class="card-btn">Играть</button>
+                </div>
+                <div class="game-card disabled">
+                    <div class="card-icon">🎲</div>
+                    <div class="card-title">Рулетка</div>
+                    <div class="card-badge">скоро</div>
+                </div>
+                <div class="game-card disabled">
+                    <div class="card-icon">📈</div>
+                    <div class="card-title">Краш</div>
+                    <div class="card-badge">скоро</div>
+                </div>
+                <div class="game-card disabled">
+                    <div class="card-icon">🎰</div>
+                    <div class="card-title">Слоты</div>
+                    <div class="card-badge">скоро</div>
+                </div>
+                <div class="game-card disabled">
+                    <div class="card-icon">🥚</div>
+                    <div class="card-title">Яйца</div>
+                    <div class="card-badge">скоро</div>
+                </div>
+                <div class="game-card disabled">
+                    <div class="card-icon">⬆️</div>
+                    <div class="card-title">Апгрейд</div>
+                    <div class="card-badge">скоро</div>
+                </div>
             </div>
 
-            <div id="create-game" class="hidden">
-                <h3>Создание игры</h3>
-                <input type="number" id="bet-amount" class="input" placeholder="Ставка (мин 0.5 TON)" min="0.5" step="0.1">
-                <button class="btn primary" onclick="submitCreateGame()">✅ Создать</button>
-                <button class="btn secondary" onclick="backToMenu()">← Назад</button>
+            <!-- Экран создания игры -->
+            <div id="create-game" class="screen hidden">
+                <h2 class="screen-title">Создать игру</h2>
+                <div class="input-group">
+                    <label>Ваша ставка (TON)</label>
+                    <input type="number" id="bet-amount" class="input" placeholder="0.5" min="0.5" step="0.1" value="0.5">
+                </div>
+                <div class="button-group">
+                    <button class="btn primary" onclick="submitCreateGame()">✅ Создать</button>
+                    <button class="btn secondary" onclick="backToMenu()">← Назад</button>
+                </div>
             </div>
 
-            <div id="join-game" class="hidden">
-                <h3>Поиск игры</h3>
-                <input type="text" id="game-id" class="input" placeholder="ID игры">
-                <button class="btn primary" onclick="submitJoinGame()">🔍 Найти</button>
-                <button class="btn secondary" onclick="backToMenu()">← Назад</button>
+            <!-- Экран поиска игры -->
+            <div id="join-game" class="screen hidden">
+                <h2 class="screen-title">Присоединиться к игре</h2>
+                <div class="input-group">
+                    <label>ID игры</label>
+                    <input type="text" id="game-id" class="input" placeholder="Введите ID">
+                </div>
+                <div class="button-group">
+                    <button class="btn primary" onclick="submitJoinGame()">🔍 Найти</button>
+                    <button class="btn secondary" onclick="backToMenu()">← Назад</button>
+                </div>
             </div>
 
-            <div id="waiting-room" class="hidden">
-                <h3>Ожидание игрока...</h3>
-                <div class="game-info">
+            <!-- Экран ожидания -->
+            <div id="waiting-room" class="screen hidden">
+                <h2 class="screen-title">Ожидание игрока</h2>
+                <div class="waiting-card">
                     <p>ID игры: <span id="waiting-game-id"></span></p>
                     <p>Ставка: <span id="waiting-bet"></span> TON</p>
+                    <div class="loader"></div>
+                    <p class="hint">Поделитесь ID с другом</p>
                 </div>
-                <div class="loader"></div>
+                <button class="btn secondary" onclick="backToMenu()">Отмена</button>
             </div>
 
-            <div id="game-room" class="hidden">
-                <h3>Игра началась!</h3>
-                <div class="game-info">
-                    <p>Ставка: <span id="game-bet"></span> TON</p>
-                    <p>Противник: <span id="opponent-name">Ожидание...</span></p>
+            <!-- Экран игры (PvP) -->
+            <div id="game-room" class="screen hidden">
+                <h2 class="screen-title">PvP битва</h2>
+                <div class="game-info-bar">
+                    <div class="info-item">💰 <span id="game-bet"></span> TON</div>
+                    <div class="info-item">👤 <span id="opponent-name">Противник</span></div>
                 </div>
-
                 <div class="choices">
                     <button class="choice-btn" onclick="makeChoice('rock')">
-                        <span class="emoji">🪨</span>
+                        <span class="choice-emoji">🪨</span>
                         <span>Камень</span>
                     </button>
                     <button class="choice-btn" onclick="makeChoice('paper')">
-                        <span class="emoji">📄</span>
+                        <span class="choice-emoji">📄</span>
                         <span>Бумага</span>
                     </button>
                     <button class="choice-btn" onclick="makeChoice('scissors')">
-                        <span class="emoji">✂️</span>
+                        <span class="choice-emoji">✂️</span>
                         <span>Ножницы</span>
                     </button>
                 </div>
-
                 <div id="waiting-choice" class="hidden">
-                    <p>Ожидание выбора противника...</p>
                     <div class="loader"></div>
+                    <p>Ожидаем выбора противника...</p>
                 </div>
             </div>
 
-            <div id="result-room" class="hidden">
-                <h3 id="result-title"></h3>
-                <div class="result-box" id="result-box">
+            <!-- Экран результата -->
+            <div id="result-room" class="screen hidden">
+                <div class="result-card" id="result-card">
+                    <h2 id="result-title"></h2>
                     <p id="result-message"></p>
                 </div>
-                <button class="btn primary" onclick="playAgain()">🎮 Играть снова</button>
-                <button class="btn secondary" onclick="backToMenu()">🏠 Главное меню</button>
+                <div class="button-group">
+                    <button class="btn primary" onclick="playAgain()">🎮 Играть снова</button>
+                    <button class="btn secondary" onclick="backToMenu()">🏠 Главная</button>
+                </div>
             </div>
         </main>
+
+        <!-- Нижняя навигация -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="showMainMenu()">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Кейсы</span>
+            </button>
+            <button class="nav-item" onclick="alert('Конкурсы скоро')">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-label">Конкурсы</span>
+            </button>
+            <button class="nav-item" onclick="alert('Задания скоро')">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Задания</span>
+            </button>
+            <button class="nav-item" onclick="alert('Лидеры скоро')">
+                <span class="nav-icon">👑</span>
+                <span class="nav-label">Лидеры</span>
+            </button>
+            <button class="nav-item" onclick="alert('Профиль скоро')">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Профиль</span>
+            </button>
+        </nav>
     </div>
 
     <script src="app.js"></script>
