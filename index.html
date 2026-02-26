@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PvP Casino</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎮 PvP Casino</h1>
+            <div class="balance" id="balance">0 TON</div>
+        </header>
+
+        <main>
+            <div id="game-menu" class="menu">
+                <button class="btn primary" onclick="createGame()">🎲 Создать игру</button>
+                <button class="btn secondary" onclick="joinGame()">🔍 Найти игру</button>
+            </div>
+
+            <div id="create-game" class="hidden">
+                <h3>Создание игры</h3>
+                <input type="number" id="bet-amount" class="input" placeholder="Ставка (мин 0.5 TON)" min="0.5" step="0.1">
+                <button class="btn primary" onclick="submitCreateGame()">✅ Создать</button>
+                <button class="btn secondary" onclick="backToMenu()">← Назад</button>
+            </div>
+
+            <div id="join-game" class="hidden">
+                <h3>Поиск игры</h3>
+                <input type="text" id="game-id" class="input" placeholder="ID игры">
+                <button class="btn primary" onclick="submitJoinGame()">🔍 Найти</button>
+                <button class="btn secondary" onclick="backToMenu()">← Назад</button>
+            </div>
+
+            <div id="waiting-room" class="hidden">
+                <h3>Ожидание игрока...</h3>
+                <div class="game-info">
+                    <p>ID игры: <span id="waiting-game-id"></span></p>
+                    <p>Ставка: <span id="waiting-bet"></span> TON</p>
+                </div>
+                <div class="loader"></div>
+            </div>
+
+            <div id="game-room" class="hidden">
+                <h3>Игра началась!</h3>
+                <div class="game-info">
+                    <p>Ставка: <span id="game-bet"></span> TON</p>
+                    <p>Противник: <span id="opponent-name">Ожидание...</span></p>
+                </div>
+
+                <div class="choices">
+                    <button class="choice-btn" onclick="makeChoice('rock')">
+                        <span class="emoji">🪨</span>
+                        <span>Камень</span>
+                    </button>
+                    <button class="choice-btn" onclick="makeChoice('paper')">
+                        <span class="emoji">📄</span>
+                        <span>Бумага</span>
+                    </button>
+                    <button class="choice-btn" onclick="makeChoice('scissors')">
+                        <span class="emoji">✂️</span>
+                        <span>Ножницы</span>
+                    </button>
+                </div>
+
+                <div id="waiting-choice" class="hidden">
+                    <p>Ожидание выбора противника...</p>
+                    <div class="loader"></div>
+                </div>
+            </div>
+
+            <div id="result-room" class="hidden">
+                <h3 id="result-title"></h3>
+                <div class="result-box" id="result-box">
+                    <p id="result-message"></p>
+                </div>
+                <button class="btn primary" onclick="playAgain()">🎮 Играть снова</button>
+                <button class="btn secondary" onclick="backToMenu()">🏠 Главное меню</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

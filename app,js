@@ -1,0 +1,247 @@
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+let userId = null;
+let currentGame = null;
+let gameCheckInterval = null;
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    userId = urlParams.get('user');
+
+    if (!userId) {
+        showError('Ошибка авторизации');
+        return;
+    }
+
+    updateBalance();
+});
+
+// Обновление баланса
+async function updateBalance() {
+    try {
+        const response = await fetch(`/api/user/${userId}`);
+        const data = await response.json();
+
+        if (data.success) {
+            document.getElementById('balance').textContent = `${data.user.balance} TON`;
+        }
+    } catch (error) {
+        console.error('Error updating balance:', error);
+    }
+}
+
+// Создание игры
+function createGame() {
+    hideAll();
+    document.getElementById('create-game').classList.remove('hidden');
+}
+
+// Присоединение к игре
+function joinGame() {
+    hideAll();
+    document.getElementById('join-game').classList.remove('hidden');
+}
+
+// Отправка создания игры
+async function submitCreateGame() {
+    const betAmount = parseFloat(document.getElementById('bet-amount').value);
+
+    if (isNaN(betAmount) || betAmount < 0.5) {
+        tg.showAlert('Минимальная ставка 0.5 TON');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/create-game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, betAmount })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentGame = data.gameId;
+            showWaitingRoom(data.gameId, betAmount);
+            startGameCheck();
+        } else {
+            tg.showAlert(data.error);
+        }
+    } catch (error) {
+        tg.showAlert('Ошибка создания игры');
+    }
+}
+
+// Отправка присоединения к игре
+async function submitJoinGame() {
+    const gameId = document.getElementById('game-id').value.trim();
+
+    if (!gameId) {
+        tg.showAlert('Введите ID игры');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/join-game', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, gameId })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            currentGame = gameId;
+            showGameRoom(data.game);
+            startGameCheck();
+        } else {
+            tg.showAlert(data.error);
+        }
+    } catch (error) {
+        tg.showAlert('Ошибка присоединения к игре');
+    }
+}
+
+// Показать комнату ожидания
+function showWaitingRoom(gameId, betAmount) {
+    hideAll();
+    document.getElementById('waiting-room').classList.remove('hidden');
+    document.getElementById('waiting-game-id').textContent = gameId;
+    document.getElementById('waiting-bet').textContent = betAmount;
+}
+
+// Показать игровую комнату
+function showGameRoom(game) {
+    hideAll();
+    document.getElementById('game-room').classList.remove('hidden');
+    document.getElementById('game-bet').textContent = game.betAmount;
+    document.getElementById('opponent-name').textContent = 'Игрок 2';
+    currentGame = game.id;
+}
+
+// Сделать выбор
+async function makeChoice(choice) {
+    try {
+        const response = await fetch('/api/make-choice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, gameId: currentGame, choice })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            document.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+
+            if (data.game.status === 'finished') {
+                showResult(data.game);
+            } else {
+                document.getElementById('waiting-choice').classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        tg.showAlert('Ошибка при выборе');
+    }
+}
+
+// Показать результат
+function showResult(game) {
+    hideAll();
+    document.getElementById('result-room').classList.remove('hidden');
+
+    const resultTitle = document.getElementById('result-title');
+    const resultMessage = document.getElementById('result-message');
+    const resultBox = document.getElementById('result-box');
+
+    let playerChoice = game.player1 === parseInt(userId) ? game.player1Choice : game.player2Choice;
+    let opponentChoice = game.player1 === parseInt(userId) ? game.player2Choice : game.player1Choice;
+
+    const choicesEmoji = {
+        rock: '🪨',
+        paper: '📄',
+        scissors: '✂️'
+    };
+
+    if (game.winner === 'draw') {
+        resultTitle.textContent = '🤝 Ничья!';
+        resultMessage.textContent = `${choicesEmoji[playerChoice]} vs ${choicesEmoji[opponentChoice]}`;
+        resultBox.className = 'result-box draw';
+    } else if (game.winner === parseInt(userId)) {
+        resultTitle.textContent = '🎉 Победа!';
+        resultMessage.textContent = `Вы выиграли ${game.betAmount * 2} TON!`;
+        resultBox.className = 'result-box win';
+    } else {
+        resultTitle.textContent = '😔 Поражение';
+        resultMessage.textContent = `Вы проиграли ${game.betAmount} TON`;
+        resultBox.className = 'result-box lose';
+    }
+
+    updateBalance();
+    stopGameCheck();
+}
+
+// Проверка статуса игры
+function startGameCheck() {
+    gameCheckInterval = setInterval(async () => {
+        if (!currentGame) return;
+
+        try {
+            const response = await fetch(`/api/game/${currentGame}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const game = data.game;
+
+                if (game.status === 'active' && document.getElementById('waiting-room') && !document.getElementById('waiting-room').classList.contains('hidden')) {
+                    showGameRoom(game);
+                }
+
+                if (game.status === 'finished') {
+                    showResult(game);
+                }
+            }
+        } catch (error) {
+            console.error('Error checking game:', error);
+        }
+    }, 2000);
+}
+
+function stopGameCheck() {
+    if (gameCheckInterval) {
+        clearInterval(gameCheckInterval);
+        gameCheckInterval = null;
+    }
+}
+
+// Играть снова
+function playAgain() {
+    currentGame = null;
+    backToMenu();
+}
+
+// Вернуться в меню
+function backToMenu() {
+    hideAll();
+    document.getElementById('game-menu').classList.remove('hidden');
+    stopGameCheck();
+    currentGame = null;
+}
+
+// Скрыть все секции
+function hideAll() {
+    document.getElementById('game-menu').classList.add('hidden');
+    document.getElementById('create-game').classList.add('hidden');
+    document.getElementById('join-game').classList.add('hidden');
+    document.getElementById('waiting-room').classList.add('hidden');
+    document.getElementById('game-room').classList.add('hidden');
+    document.getElementById('result-room').classList.add('hidden');
+}
+
+// Показать ошибку
+function showError(message) {
+    tg.showAlert(message);
+}
